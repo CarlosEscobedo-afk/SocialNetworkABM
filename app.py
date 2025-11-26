@@ -99,12 +99,7 @@ def SpaceWithArrows(model):
     steps = current_model.steps
     width = current_model.width
     height = current_model.height
-    news_propagation = list(current_model.news_propagation) if hasattr(current_model, "news_propagation") else []
-
-    # DEBUG
-    print(f"\n=== RENDER Steps: {steps}, Trigger: {render_trigger}, Propagations: {len(news_propagation)} ===")
-
-    # Crear figura
+    news_propagation = list(current_model.news_propagation) if hasattr(current_model, "news_propagation") else []  # Crear figura
     fig = Figure(figsize=(8, 8))
     ax = fig.add_subplot(111)
 
@@ -179,6 +174,50 @@ def SpaceWithArrows(model):
 
 
 @solara.component
+def ConversionAlert(model):
+    """Componente que muestra alertas cuando hay conversiones de agentes"""
+    current_model = model.value if hasattr(model, "value") else model
+
+    if not hasattr(current_model, "converted_agents"):
+        return
+
+    # Obtener las conversiones más recientes
+    conversions = current_model.converted_agents
+
+    if not conversions:
+        return
+
+    # Mostrar información de la última conversión
+    last_conversion = conversions[-1]
+
+    with solara.Card(f"🔄 Conversión de Agente Detectada", elevation=4):
+        with solara.Column():
+            solara.Markdown(
+                f"""
+### Información del Agente Convertido
+
+- **Agente ID**: {last_conversion['id']}
+- **Cambio**: `{last_conversion['old_type']}` → `{last_conversion['new_type']}`
+- **Partido**: {last_conversion['partido']}
+- **Posición en Grid**: {last_conversion['position']}
+- **Percepción hacia partido contrario**: {last_conversion['perception']:.3f}
+- **Nueva Credibilidad**: {last_conversion['new_credibility']:.3f}
+
+---
+
+⏸️ **Simulación pausada automáticamente**
+
+Presiona **STEP** o **PLAY** para continuar la simulación.
+            """
+            )
+
+            def clear_alert():
+                current_model.converted_agents.clear()
+
+            solara.Button("Cerrar Alerta y Continuar", on_click=clear_alert, color="primary")
+
+
+@solara.component
 def Page():
     # Crear modelo inicial
     simulator = solara.use_memo(lambda: ABMSimulator(), dependencies=[])
@@ -223,7 +262,9 @@ def Page():
 
     # Pasar el counter como parte de un wrapper para forzar re-render
     with solara.Column():
-        solara.Text(f"Update counter: {update_counter.value}")
+        # Mostrar alerta de conversión si existe
+        ConversionAlert(initial_model)
+
         SolaraViz(
             initial_model,
             components=[SpaceWithArrows, perception_plot, shared_news_plot, CommandConsole],

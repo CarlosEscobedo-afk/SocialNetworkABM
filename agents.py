@@ -8,11 +8,11 @@ PARTY = ["A", "B"]
 POLARITYNEWS = [-1, 1]
 VERACITYNEWS = [False, True]
 PHI = 0.6
-ALPHA = 0.1
+ALPHA = 0.12  # Aumentado para que las percepciones cambien más rápido
 
-# Umbrales de conversión de agentes
-THRESHOLD_TO_SKEPTIC = -0.3  # Si percepción hacia partido contrario es muy negativa
-THRESHOLD_TO_SUSCEPTIBLE = 0.3  # Si percepción hacia partido contrario es muy positiva
+# Umbrales de conversión de agentes (más cercanos a 0 = conversiones más frecuentes)
+THRESHOLD_TO_SKEPTIC = -0.10  # Si percepción hacia partido contrario es negativa
+THRESHOLD_TO_SUSCEPTIBLE = 0.10  # Si percepción hacia partido contrario es positiva
 
 
 class News:
@@ -226,7 +226,24 @@ class User(CellAgent):
         if hasattr(self.model, "converted_agents"):
             self.model.converted_agents.append({"id": self.id, "old_type": old_type_name, "new_type": new_type_name, "partido": self.partido, "position": cell_pos, "perception": perception, "new_credibility": self.credibility})
 
-        print(f"  >> CONVERSION: {old_type_name} {self.id} (Partido {self.partido}) -> {new_type_name} (nueva credibilidad: {self.credibility:.3f})")
+        # PAUSAR el modelo cuando hay conversión
+        if hasattr(self.model, "running"):
+            self.model.running = False
+
+        print(f"\n{'='*60}")
+        print(f"🔄 CONVERSIÓN DE AGENTE DETECTADA")
+        print(f"{'='*60}")
+        print(f"  >> Agente ID: {self.id}")
+        print(f"  >> Cambio: {old_type_name} → {new_type_name}")
+        print(f"  >> Partido: {self.partido}")
+        print(f"  >> Posición: {cell_pos}")
+        print(f"  >> Percepción hacia partido contrario: {perception:.3f}")
+        print(f"  >> Nueva credibilidad: {self.credibility:.3f}")
+        print(f"  >> Noticias recibidas: {len(self.newsReceived)}")
+        print(f"  >> Noticias compartidas: {len(self.newsShared)}")
+        print(f"{'='*60}")
+        print(f"⏸️  SIMULACIÓN PAUSADA - Presiona STEP o PLAY para continuar")
+        print(f"{'='*60}\n")
 
     def shareDecision(self, news: News) -> bool:
         """Abstracto: devolver True si decide compartir (según la noticia)."""
